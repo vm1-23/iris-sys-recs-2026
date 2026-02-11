@@ -18,8 +18,14 @@ default: &default
   socket: /var/run/mysqld/mysqld.sock
 
 development:
-  <<: *default
-  database: iris_systems_rec_task_development
+  adapter: mysql2
+  encoding: utf8mb4
+  database: app_development
+  username: app
+  password: password
+  host: mysql-db
+  port: 3306
+
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
