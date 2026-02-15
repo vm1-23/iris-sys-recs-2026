@@ -41,6 +41,37 @@ services:
     networks:
       - iris_sys
 
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    restart: always
+    ports:
+      - "8081:8080"
+    volumes:
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+    networks:
+      - iris_sys
+
+  prometheus:
+    image: prom/prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - iris_sys
+
+  grafana:
+    image: grafana/grafana
+    restart: always
+    ports:
+      - "3001:3000"
+    networks:
+      - iris_sys
+
+
+
 volumes:
   mysql_data:
 
