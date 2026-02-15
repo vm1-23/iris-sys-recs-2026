@@ -12,7 +12,7 @@ Below are the branches corresponding to each task:
 
 - Created Dockerfile  
 - Built Rails image  
-- Successfully ran Rails container
+- Ran Mysql container, connected via docker network
 - Done without compose
 
 ---
@@ -20,8 +20,7 @@ Below are the branches corresponding to each task:
 ## Multi-Container Setup (Rails + MySQL)  
 **Branch:** [`three_container_nginx`](../../tree/three_container_nginx)
 
-- Launched Rails container  
-- Launched separate MySQL container  
+- Launched Rails container   
 - Connected via Docker network  
 - Db port not exposed externally 
 
