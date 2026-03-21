@@ -3,13 +3,16 @@ services:
   mysql:
     image: mysql:8.0
     restart: always
+    #load env varaibles
     env_file: .env
     volumes:
+      #local docker volume to persist data across container restarts
       - mysql_data:/var/lib/mysql
     networks:
       - storage_network
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      #healthcheck every 5s
       interval: 5s
       retries: 5
 
@@ -17,6 +20,7 @@ services:
     build: .
     restart: always
     volumes:
+      #mount nfs volume into container at /app/storage, all 3 replicas read from the same place
       - shared_nfs:/app/storage
     depends_on:
       mysql:
@@ -25,8 +29,10 @@ services:
         condition: service_started
     environment:
       RAILS_ENV: development
+      #database hosts points to the mysql service name via Docker DNS
       DB_HOST: mysql
     deploy:
+      #automatically run exactly 3 identical instances (replicas) of this Rails container   
       replicas: 3
     networks:
       - app_network
@@ -36,16 +42,21 @@ services:
     image: nginx:latest
     restart: always
     ports:
+      #map port 80 in the host machine to port 80 on the nginx container
       - "80:80"
     volumes:
+      #mount local nginx conf into the nginx container as read only
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./auth:/etc/nginx/auth:ro
     depends_on:
       - rails
     networks:
       - public
       - app_network
+      - monitoring_network
 
   nfs-server:
+    #pre-configured alphine based nfs image
     image: itsthenetwork/nfs-server-alpine
     privileged: true
     environment:
@@ -53,26 +64,110 @@ services:
     volumes:
       - nfs_data:/exports
     ports:
+      # Expose the standard NFS port (2049) so the Docker daemon (host) can access it
       - "2049:2049"
     networks:
       storage_network:
+        # Assign a STATIC IP ADDRESS to bypass DNS resolution during Docker's volume mounting phase.
+        # Docker evaluates top-level volume definitions before containers start routing dynamically.
         ipv4_address: 172.25.0.2
 
+  prometheus:
+    image: prom/prometheus
+    restart: always
+    command:
+      #use the config file
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    volumes:
+      #mount the local config file into the container
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - monitoring_network
+      - app_network
+
+  grafana:
+    image: grafana/grafana
+    restart: always
+    networks:
+      - monitoring_network
+      - app_network
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    restart: always
+    volumes:
+      #read only mounts required to inspect the host machien's Docker runtime and container porcesses
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - monitoring_network
+
+  node-exporter:
+    image: prom/node-exporter
+    restart: always
+    networks:
+      - monitoring_network
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    restart: always
+    command:
+      # Point to the NGINX container's internal stub_status endpoint
+      - -nginx.scrape-uri=http://nginx:80/stub_status
+    networks:
+      - monitoring_network
+      - app_network
+
+  loki:
+    image: grafana/loki:latest
+    restart: always
+    ports:
+      #expose port 3100 so Promtail can push logs to it locally
+      - "3100:3100"
+    networks:
+      - monitoring_network
+
+  promtail:
+    image: grafana/promtail:latest
+    restart: always
+    volumes:
+      # Mount the host Docker container logs directory so it can natively read stdout/stderr streams
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      # Mount the custom scraping/filtering config rules
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - monitoring_network
+
 volumes:
-  mysql_data:
+
+  mysql_data: #local volume as backing storage for the nfs exports
+
   nfs_data:
+
   shared_nfs:
     driver: local
     driver_opts:
+      #specify use of nfs protocol
       type: "nfs"
-      o: "addr=172.25.0.2,rw,nolock,soft,nfsvers=4"
+      # Configuration arguments:
+      # addr=172.25.0.2: Point specifically to our static IP NFS server
+      # rw: Read and write access
+      # nolock,soft: Standard NFS failure tolerance settings
+      # nfsvers=4: Explicitly use NFSv4 for better compatibility and simpler pathing
+      o: "addr=172.25.0.2,rw,nolock,soft,nfsvers=4" #points to static IP NFS server, read and write access, failure tolerance
       device: ":/"
 
 networks:
-  public:
+  public: #
+
   app_network:
+
   storage_network:
     ipam:
       config:
+        # We explicitly map the subnet block so we can safely assign the 172.25.0.2 static IP to our nfs-server
         - subnet: 172.25.0.0/16
+
   monitoring_network:
