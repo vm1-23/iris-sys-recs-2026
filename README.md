@@ -1,80 +1,49 @@
-# iris-sys-recs-2026
+# iris-sys-recs-2026 ROUND 2  
 Submission for the **IRIS Systems Team Recruitment 2026**.
 
-# Completed Tasks
+# Completed Tasks  
 
-Below are the branches corresponding to each task:
-
----
-
-## Dockerize Rails Application  
-**Branch:** [`dockerize`](../../tree/dockerize)
-
-- Created Dockerfile  
-- Built Rails image  
-- Ran Mysql container, connected via docker network
-- Done without compose
+Below are the tasks completed:
 
 ---
 
-## Multi-Container Setup (Rails + MySQL)  
-**Branch:** [`three_container_nginx`](../../tree/three_container_nginx)
+## Reverse Proxy, Load Balancing & Access Control  
 
-- Launched Rails container   
-- Connected via Docker network  
-- Db port not exposed externally 
-
----
-
-## Nginx Reverse Proxy  
-**Branch:** [`nginx`](../../tree/nginx)
-
-- Configured Nginx as reverse proxy  
-- Exposed application at port 80  
-- Removed direct Rails exposure  
+- Configured NGINX to load balance across 3 Rails application replicas  
+- Set up upstream blocks with health checks and automatic failover  
+- Enabled graceful NGINX reloads without dropping active connections  
+- Implemented rate limiting per IP with proper burst handling (returns **429** on limit exceed)  
+- Configured subdomain-based routing (e.g., `app.localhost`, `grafana.localhost`)  
+- Secured internal services like Grafana using HTTP Basic Authentication at NGINX level  
 
 ---
 
-## Load Balancing Across 3 Rails Containers  
-**Branch:** [`three_container_nginx`](../../tree/three_container_nginx)
+## Shared Storage via NFS  
 
-- Scaled Rails to 3 containers  
-- Configured upstream block in Nginx   
-
----
-
-## Persistence (Database & Config)  
-**Branch:** [`persistence`](../../tree/persistence)
-
-- Implemented Docker named volume for MySQL  
-- Ensured DB data persists after container removal  
-- Used bind mount for Nginx configuration 
+- Deployed NFS server container with proper export configuration  
+- Mounted shared directory across all 3 Rails replicas  
+- Verified cross-replica consistency (file written from one replica accessible from others)  
+- Ensured persistence across container restarts  
 
 ---
 
-## Docker Compose Integration  
-**Branch:** [`compose`](../../tree/compose)
+## Monitoring Stack  
 
-- Combined all the above tasks in Docker compose  
-- Network, services, volumes declared explicitly  
-
----
-
-## Rate Limiting in Nginx  
-**Branch:** [`rate-limit`](../../tree/rate-limit)
-
-- Implemented request limiting per IP  
-- Configured burst handling   
-
----
-
-## Monitoring (Prometheus + Grafana + cAdvisor)  
-**Branch:** [`monitoring`](../../tree/monitoring)
-
-- Added cAdvisor for container metrics  
-- Configured Prometheus  
-- Connected Grafana for visualization  
-- Verified CPU & memory monitoring per container  
+- Configured Prometheus to scrape:  
+  - Node Exporter (host metrics)  
+  - cAdvisor (container metrics)  
+  - NGINX metrics  
+  - Rails application replicas  
+- Set up Grafana dashboards displaying:  
+  - CPU & memory usage  
+  - Container restarts  
+  - Request rate  
+  - Error rate  
+- Restricted direct port exposure of Prometheus & Grafana (accessible only via NGINX)  
 
 ---
 
+## Bonus
+
+- Instrumented application metrics using a Prometheus client library  
+- Integrated Loki + Promtail for centralized log aggregation  
