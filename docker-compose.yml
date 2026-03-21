@@ -9,19 +9,25 @@ services:
     networks:
       - storage_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 5s
       retries: 5
 
   rails:
     build: .
     restart: always
+    volumes:
+      - shared_nfs:/app/storage
     depends_on:
       mysql:
         condition: service_healthy
+      nfs-server:
+        condition: service_started
     environment:
       RAILS_ENV: development
       DB_HOST: mysql
+    deploy:
+      replicas: 3
     networks:
       - app_network
       - storage_network
@@ -38,13 +44,35 @@ services:
     networks:
       - public
       - app_network
-        
+
+  nfs-server:
+    image: itsthenetwork/nfs-server-alpine
+    privileged: true
+    environment:
+      SHARED_DIRECTORY: /exports
+    volumes:
+      - nfs_data:/exports
+    ports:
+      - "2049:2049"
+    networks:
+      storage_network:
+        ipv4_address: 172.25.0.2
 
 volumes:
   mysql_data:
+  nfs_data:
+  shared_nfs:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=172.25.0.2,rw,nolock,soft,nfsvers=4"
+      device: ":/"
 
 networks:
   public:
   app_network:
   storage_network:
-  monitoring_network: 
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+  monitoring_network:
