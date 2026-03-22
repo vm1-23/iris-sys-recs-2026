@@ -67,7 +67,7 @@ Below are the tasks completed:
 
 ### Bonus Visual Proof
 ![Prometheus App Metrics](screenshots/application-metrics-prometheus.png)
-![Loki Integration](screenshots/loki.png)
+![Loki Integration](screenshots/loki1.png)
 
 ---
 
