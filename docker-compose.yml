@@ -140,6 +140,20 @@ services:
     networks:
       - monitoring_network
 
+  backup:
+    build: ./backup
+    restart: always
+    environment:
+      #injecting mysql password for the mysql dump to authenticate
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - DB_HOST=mysql
+    volumes:
+      #mount local host directory
+      - ./backups:/backups
+      - shared_nfs:/app/storage:ro
+    networks:
+      - storage_network
+
 volumes:
 
   mysql_data: #local volume as backing storage for the nfs exports
@@ -151,11 +165,6 @@ volumes:
     driver_opts:
       #specify use of nfs protocol
       type: "nfs"
-      # Configuration arguments:
-      # addr=172.25.0.2: Point specifically to our static IP NFS server
-      # rw: Read and write access
-      # nolock,soft: Standard NFS failure tolerance settings
-      # nfsvers=4: Explicitly use NFSv4 for better compatibility and simpler pathing
       o: "addr=172.25.0.2,rw,nolock,soft,nfsvers=4" #points to static IP NFS server, read and write access, failure tolerance
       device: ":/"
 
