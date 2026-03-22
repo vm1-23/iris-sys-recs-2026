@@ -18,7 +18,7 @@ Below are the tasks completed:
 
 ### Task 1 Visual Proof
 ![Load Balancing](screenshots/load-balancing.png)
-![HTTP Basic Auth](screenshots/http-basic-auth.png)
+![HTTP Basic Auth](screenshots/httpbasic.png)
 
 ---
 
@@ -47,7 +47,7 @@ Below are the tasks completed:
 
 ### Task 3 Visual Proof
 ![cAdvisor Rails Metrics](screenshots/rails-1-cadvisor-grafana.png)
-![Node Exporter Grafana](screenshots/node-exporter-grafana.png)
+![Node Exporter Grafana](screenshots/node_exporter.png)
 
 ---
 
@@ -67,7 +67,7 @@ Below are the tasks completed:
 
 ### Bonus Visual Proof
 ![Prometheus App Metrics](screenshots/application-metrics-prometheus.png)
-![Loki Integration](screenshots/loki-integration.png)
+![Loki Integration](screenshots/loki.png)
 
 ---
 
